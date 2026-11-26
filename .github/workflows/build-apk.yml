@@ -13,12 +13,14 @@ jobs:
 
       - name: Unpack Project ZIP (for mobile uploads)
         run: |
-          for z in *.zip; do
-            if [ -f "$z" ]; then
-              unzip -o "$z"
-              break
+          if [ ! -f "settings.gradle.kts" ]; then
+            ZIP_FILE=$(find . -maxdepth 2 -name "*.zip" | head -n 1)
+            if [ -z "$ZIP_FILE" ]; then
+              echo "ERROR: Upload GHOST-COPY-Android-Studio-Project.zip to this repository first."
+              exit 1
             fi
-          done
+            unzip -o "$ZIP_FILE"
+          fi
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
@@ -28,6 +30,8 @@ jobs:
 
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
+        with:
+          packages: 'platform-tools platforms;android-35 build-tools;35.0.0'
 
       - name: Setup Gradle & Build Debug APK
         uses: gradle/actions/setup-gradle@v4
@@ -35,7 +39,7 @@ jobs:
           gradle-version: '8.9'
 
       - name: Compile APK
-        run: gradle assembleDebug
+        run: gradle assembleDebug --no-daemon --stacktrace
 
       - name: Upload GHOST-COPY APK
         uses: actions/upload-artifact@v4
